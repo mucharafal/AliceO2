@@ -1140,7 +1140,7 @@ std::map<std::string, std::string> CcdbApi::retrieveHeaders(std::string const& p
         fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
       }
 
-      getCodeRes = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+      getCodeRes = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
     }
 
     if (httpCode == 404) {
