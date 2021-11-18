@@ -26,6 +26,7 @@
 #include "CCDB/CcdbObjectInfo.h"
 #include <CommonUtils/ConfigurableParam.h>
 #include <type_traits>
+#include <vector>
 
 #if !defined(__CINT__) && !defined(__MAKECINT__) && !defined(__ROOTCLING__) && !defined(__CLING__)
 #include <TJAlienCredentials.h>
@@ -62,9 +63,10 @@ class CcdbApi //: public DatabaseInterface
   /**
    * Initialize connection to CCDB
    *
-   * @param host The URL to the CCDB (e.g. "ccdb-test.cern.ch:8080" or to a local snapshot "file:///tmp/CCDBSnapshot")
+   * @param hosts The URLs to the CCDB (e.g. "ccdb-test.cern.ch:8080" or to a local snapshot "file:///tmp/CCDBSnapshot"), 
+   * separated with "," or ";" ("https://localhost:8080,https://ccdb-test.cern.ch:8080")
    */
-  void init(std::string const& host);
+  void init(std::string const& hosts);
 
   /**
    * Query current URL
@@ -351,7 +353,7 @@ class CcdbApi //: public DatabaseInterface
    */
   std::string getFullUrlForStorage(CURL* curl, const std::string& path, const std::string& objtype,
                                    const std::map<std::string, std::string>& metadata,
-                                   long startValidityTimestamp = -1, long endValidityTimestamp = -1) const;
+                                   long startValidityTimestamp = -1, long endValidityTimestamp = -1, int hostIndex = 0) const;
 
   /**
    * Build the full url to store an object.
@@ -361,7 +363,7 @@ class CcdbApi //: public DatabaseInterface
    * @return The full url to store an object (url / startValidity / endValidity / [metadata &]* )
    */
   std::string getFullUrlForRetrieval(CURL* curl, const std::string& path, const std::map<std::string, std::string>& metadata,
-                                     long timestamp = -1) const;
+                                     long timestamp = -1, int hostIndex = 0) const;
 
  public:
   /**
@@ -421,8 +423,39 @@ class CcdbApi //: public DatabaseInterface
   // convert type_info to TClass, throw on failure
   static TClass* tinfo2TClass(std::type_info const& tinfo);
 
+  // split string on delimiters and return tokens as vector
+  std::vector<std::string> splitString(std::string string, const char* delimiters);
+
+  typedef size_t (*CurlWriteCallback)(void*, size_t, size_t, void*);
+
+  void initCurlOptionsForRetrieve(CURL* curlHandle, void* pointer, CurlWriteCallback writeCallback, bool followRedirect = true) const;
+
+  void initHeadersForRetrieve(CURL* curlHandle, long timestamp, std::map<std::string, std::string>* headers, std::string const& etag,
+                              const std::string& createdNotAfter, const std::string& createdNotBefore) const;
+
+  bool receiveToFile(FILE* fileHandle, std::string const& path, std::map<std::string, std::string> const& metadata,
+                     long timestamp, std::map<std::string, std::string>* headers = nullptr, std::string const& etag = "",
+                     const std::string& createdNotAfter = "", const std::string& createdNotBefore = "", bool followRedirect = true) const;
+
+  bool receiveToMemory(void* chunk, std::string const& path, std::map<std::string, std::string> const& metadata,
+                       long timestamp, std::map<std::string, std::string>* headers = nullptr, std::string const& etag = "",
+                       const std::string& createdNotAfter = "", const std::string& createdNotBefore = "", bool followRedirect = true) const;
+
+  bool receiveObject(void* dataHolder, std::string const& path, std::map<std::string, std::string> const& metadata,
+                     long timestamp, std::map<std::string, std::string>* headers, std::string const& etag,
+                     const std::string& createdNotAfter, const std::string& createdNotBefore, bool followRedirect, CurlWriteCallback writeCallback) const;
+
+  /**
+  * Initialize hostsPool
+  * @param hosts string with hosts separated by "," or ";"
+  */
+  void initHostsPool(std::string hosts);
+
+  std::string getHostUrl(int hostIndex) const;
+
   /// Base URL of the CCDB (with port)
   std::string mUrl{};
+  std::vector<std::string> hostsPool{};
   std::string mSnapshotTopPath{};
   bool mInSnapshotMode = false;
   mutable TGrid* mAlienInstance = nullptr;                       // a cached connection to TGrid (needed for Alien locations)
