@@ -544,7 +544,6 @@ TObject* CcdbApi::retrieveFromTFile(std::string const& path, std::map<std::strin
 bool CcdbApi::retrieveBlob(std::string const& path, std::string const& targetdir, std::map<std::string, std::string> const& metadata,
                            long timestamp, bool preservePath, std::string const& localFileName) const
 {
-  //todo use multiple urls?
 
   // we setup the target path for this blob
   std::string fulltargetdir = targetdir + '/' + (preservePath ? path : "");
@@ -748,7 +747,6 @@ void* CcdbApi::interpretAsTMemFileAndExtract(char* contentptr, size_t contentsiz
 // navigate sequence of URLs until TFile content is found; object is extracted and returned
 void* CcdbApi::navigateURLsAndRetrieveContent(CURL* curl_handle, std::string const& url, std::type_info const& tinfo, std::map<string, string>* headers) const
 {
-  // todo here is logic for redirects, include in receiveObject
   // a global internal data structure that can be filled with HTTP header information
   // static --> to avoid frequent alloc/dealloc as optimization
   // not sure if thread_local takes away that benefit
@@ -952,18 +950,12 @@ size_t CurlWrite_CallbackFunc_StdString2(void* contents, size_t size, size_t nme
 
 std::string CcdbApi::list(std::string const& path, bool latestOnly, std::string const& returnFormat) const
 {
-  // todo how to use multiple urls? merge response from all?
   CURL* curl;
-  CURLcode res;
-  string fullUrl = mUrl;
-  fullUrl += latestOnly ? "/latest/" : "/browse/";
-  fullUrl += path;
+  CURLcode res = CURL_LAST;
   std::string result;
 
   curl = curl_easy_init();
   if (curl != nullptr) {
-
-    curl_easy_setopt(curl, CURLOPT_URL, fullUrl.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CurlWrite_CallbackFunc_StdString2);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &result);
 
@@ -974,10 +966,18 @@ std::string CcdbApi::list(std::string const& path, bool latestOnly, std::string 
 
     curlSetSSLOptions(curl);
 
+    string fullUrl;
     // Perform the request, res will get the return code
-    res = curl_easy_perform(curl);
-    if (res != CURLE_OK) {
-      fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+    for (int hostIndex = 0; hostIndex < hostsPool.size() && res != CURLE_OK; hostIndex++) {
+      fullUrl = getHostUrl(hostIndex);
+      fullUrl += latestOnly ? "/latest/" : "/browse/";
+      fullUrl += path;
+      curl_easy_setopt(curl, CURLOPT_URL, fullUrl.c_str());
+
+      res = curl_easy_perform(curl);
+      if (res != CURLE_OK) {
+        fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+      }
     }
     curl_slist_free_all(headers);
     curl_easy_cleanup(curl);
@@ -995,33 +995,32 @@ std::string CcdbApi::getTimestampString(long timestamp) const
 
 void CcdbApi::deleteObject(std::string const& path, long timestamp) const
 {
-  // todo here, how to handle delete?
   CURL* curl;
   CURLcode res;
   stringstream fullUrl;
   long timestampLocal = timestamp == -1 ? getCurrentTimestamp() : timestamp;
 
-  fullUrl << mUrl << "/" << path << "/" << timestampLocal;
-
   curl = curl_easy_init();
   if (curl != nullptr) {
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
-    curl_easy_setopt(curl, CURLOPT_URL, fullUrl.str().c_str());
-
     curlSetSSLOptions(curl);
 
-    // Perform the request, res will get the return code
-    res = curl_easy_perform(curl);
-    if (res != CURLE_OK) {
-      fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+    for (int hostIndex = 0; hostIndex < hostsPool.size(); hostIndex++) {
+      fullUrl << getHostUrl(hostIndex) << "/" << path << "/" << timestampLocal;
+      curl_easy_setopt(curl, CURLOPT_URL, fullUrl.str().c_str());
+
+      // Perform the request, res will get the return code
+      res = curl_easy_perform(curl);
+      if (res != CURLE_OK) {
+        fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+      }
+      curl_easy_cleanup(curl);
     }
-    curl_easy_cleanup(curl);
   }
 }
 
 void CcdbApi::truncate(std::string const& path) const
 {
-  // todo here, how to handle truncate?
   CURL* curl;
   CURLcode res;
   stringstream fullUrl;
@@ -1052,7 +1051,6 @@ size_t write_data(void* buffer, size_t size, size_t nmemb, void* userp)
 
 bool CcdbApi::isHostReachable() const
 {
-  // todo isAnyOfHostsReachable?
   CURL* curl;
   CURLcode res = CURL_LAST;
   bool result = false;
@@ -1112,9 +1110,8 @@ size_t header_callback(char* buffer, size_t size, size_t nitems, void* userdata)
 
 std::map<std::string, std::string> CcdbApi::retrieveHeaders(std::string const& path, std::map<std::string, std::string> const& metadata, long timestamp) const
 {
-  // todo use multiple urls?
   CURL* curl = curl_easy_init();
-  CURLcode res;
+  CURLcode res = CURL_LAST;
   string fullUrl = getFullUrlForRetrieval(curl, path, metadata, timestamp);
   std::map<std::string, std::string> headers;
 
@@ -1123,7 +1120,7 @@ std::map<std::string, std::string> CcdbApi::retrieveHeaders(std::string const& p
     list = curl_slist_append(list, ("If-None-Match: " + std::to_string(timestamp)).c_str());
 
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, list);
-    curl_easy_setopt(curl, CURLOPT_URL, fullUrl.c_str());
+
     /* get us the resource without a body! */
     curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
@@ -1133,13 +1130,20 @@ std::map<std::string, std::string> CcdbApi::retrieveHeaders(std::string const& p
     curlSetSSLOptions(curl);
 
     // Perform the request, res will get the return code
-    res = curl_easy_perform(curl);
-    if (res != CURLE_OK) {
-      fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+
+    long httpCode = 404;
+    CURLcode getCodeRes = CURL_LAST;
+    for (int hostIndex = 0; hostIndex < hostsPool.size() && (httpCode == 404 || res > 0 || getCodeRes > 0); hostIndex++) {
+      curl_easy_setopt(curl, CURLOPT_URL, fullUrl.c_str());
+      res = curl_easy_perform(curl);
+      if (res != CURLE_OK) {
+        fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+      }
+
+      getCodeRes = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
     }
-    long http_code = 0;
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
-    if (http_code == 404) {
+
+    if (httpCode == 404) {
       headers.clear();
     }
 
@@ -1151,7 +1155,6 @@ std::map<std::string, std::string> CcdbApi::retrieveHeaders(std::string const& p
 
 bool CcdbApi::getCCDBEntryHeaders(std::string const& url, std::string const& etag, std::vector<std::string>& headers)
 {
-  // todo use multiple urls?
   auto curl = curl_easy_init();
   headers.clear();
   if (!curl) {
@@ -1174,7 +1177,7 @@ bool CcdbApi::getCCDBEntryHeaders(std::string const& url, std::string const& eta
 
   /* Perform the request */
   curl_easy_perform(curl);
-  long http_code = 0;
+  long http_code = 404;
   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
   if (http_code == 304) {
     return false;
