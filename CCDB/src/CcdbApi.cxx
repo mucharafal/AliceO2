@@ -921,7 +921,6 @@ void* CcdbApi::retrieveFromTFile(std::type_info const& tinfo, std::string const&
   }
 
   initHeadersForRetrieve(curl_handle, timestamp, headers, etag, createdNotAfter, createdNotBefore);
-
   auto content = navigateURLsAndRetrieveContent(curl_handle, fullUrl, tinfo, headers);
 
   for (int hostIndex = 1; hostIndex < hostsPool.size() && !(content); hostIndex++) {
