@@ -468,7 +468,7 @@ bool CcdbApi::receiveObject(void* dataHolder, std::string const& path, std::map<
     long responseCode = 0;
     CURLcode curlResultCode = CURL_LAST;
 
-    for (int hostIndex = 0; hostIndex < hostsPool.size() && (responseCode > 250 || curlResultCode > 0); hostIndex++) {
+    for (int hostIndex = 0; hostIndex < hostsPool.size() && (responseCode >= 400 || curlResultCode > 0); hostIndex++) {
       string fullUrl = getFullUrlForRetrieval(curlHandle, path, metadata, timestamp, hostIndex);
       curl_easy_setopt(curlHandle, CURLOPT_URL, fullUrl.c_str());
 
@@ -481,7 +481,7 @@ bool CcdbApi::receiveObject(void* dataHolder, std::string const& path, std::map<
                 curl_easy_strerror(curlResultCode));
       } else {
         curlResultCode = curl_easy_getinfo(curlHandle, CURLINFO_RESPONSE_CODE, &responseCode);
-        if ((curlResultCode == CURLE_OK) && (responseCode != 404)) {
+        if ((curlResultCode == CURLE_OK) && (responseCode < 300)) {
           curl_easy_cleanup(curlHandle);
           return true;
         } else {
@@ -1132,7 +1132,7 @@ std::map<std::string, std::string> CcdbApi::retrieveHeaders(std::string const& p
 
     long httpCode = 404;
     CURLcode getCodeRes = CURL_LAST;
-    for (int hostIndex = 0; hostIndex < hostsPool.size() && (httpCode == 404 || res > 0 || getCodeRes > 0); hostIndex++) {
+    for (int hostIndex = 0; hostIndex < hostsPool.size() && (httpCode >= 400 || res > 0 || getCodeRes > 0); hostIndex++) {
       curl_easy_setopt(curl, CURLOPT_URL, fullUrl.c_str());
       res = curl_easy_perform(curl);
       if (res != CURLE_OK) {
