@@ -1,0 +1,26 @@
+var classo2_1_1tpc_1_1CalibdEdxTrackTopologyPol =
+[
+    [ "CalibdEdxTrackTopologyPol", "dc/d5f/classo2_1_1tpc_1_1CalibdEdxTrackTopologyPol.html#aea231f9ff34403b4318932c643addcde", null ],
+    [ "CalibdEdxTrackTopologyPol", "dc/d5f/classo2_1_1tpc_1_1CalibdEdxTrackTopologyPol.html#a03e4e968e49452205bbe4a5018742276", null ],
+    [ "~CalibdEdxTrackTopologyPol", "dc/d5f/classo2_1_1tpc_1_1CalibdEdxTrackTopologyPol.html#a0d2f8f2b864b032e52af32030a9291f9", null ],
+    [ "clear", "dc/d5f/classo2_1_1tpc_1_1CalibdEdxTrackTopologyPol.html#a87df6d7f99e8eda600e86433e6c4a9c7", null ],
+    [ "getDims", "dc/d5f/classo2_1_1tpc_1_1CalibdEdxTrackTopologyPol.html#ae39cfdeb80aa5cafee539fcfeec289b8", null ],
+    [ "getParams", "dc/d5f/classo2_1_1tpc_1_1CalibdEdxTrackTopologyPol.html#acbdae91fe233b577902f1a6491f32f7c", null ],
+    [ "GPUd", "dc/d5f/classo2_1_1tpc_1_1CalibdEdxTrackTopologyPol.html#a6af607e9d821ba50a596c25c27f0d300", null ],
+    [ "GPUd", "dc/d5f/classo2_1_1tpc_1_1CalibdEdxTrackTopologyPol.html#a3c89101bc912bbf6dfd79dcf2dd77856", null ],
+    [ "GPUd", "dc/d5f/classo2_1_1tpc_1_1CalibdEdxTrackTopologyPol.html#a252ddb4b994db2eb15395345d33b1b3c", null ],
+    [ "loadFromFile", "dc/d5f/classo2_1_1tpc_1_1CalibdEdxTrackTopologyPol.html#a95fa555a647de1ac18266fe94d5a4351", null ],
+    [ "saveFile", "dc/d5f/classo2_1_1tpc_1_1CalibdEdxTrackTopologyPol.html#ae0e9f64d9530b168a1aa835d5036b31a", null ],
+    [ "setMaxSinPhi", "dc/d5f/classo2_1_1tpc_1_1CalibdEdxTrackTopologyPol.html#add63d800706c217ef6f713e85abf7090", null ],
+    [ "setMaxTanTheta", "dc/d5f/classo2_1_1tpc_1_1CalibdEdxTrackTopologyPol.html#a1b691614e4fe45c636a1312345f197a2", null ],
+    [ "setParams", "dc/d5f/classo2_1_1tpc_1_1CalibdEdxTrackTopologyPol.html#a1fea34211003911333411865a392f607", null ],
+    [ "charge", "dc/d5f/classo2_1_1tpc_1_1CalibdEdxTrackTopologyPol.html#a42067caccee96e8bcd80b494b39ccecd", null ],
+    [ "corr", "dc/d5f/classo2_1_1tpc_1_1CalibdEdxTrackTopologyPol.html#a44195ce70ce86160e44ac81896e6d62b", null ],
+    [ "corr", "dc/d5f/classo2_1_1tpc_1_1CalibdEdxTrackTopologyPol.html#ae513a6fc9e316372c935beffacc3f91b", null ],
+    [ "relPad", "dc/d5f/classo2_1_1tpc_1_1CalibdEdxTrackTopologyPol.html#afb41e7ee618b5db1c9b56cbb991ff473", null ],
+    [ "relTime", "dc/d5f/classo2_1_1tpc_1_1CalibdEdxTrackTopologyPol.html#aa41c86d7629bc40ed7a5a689dfa9c10e", null ],
+    [ "sinPhi", "dc/d5f/classo2_1_1tpc_1_1CalibdEdxTrackTopologyPol.html#a66d31de4d5c2b045951b60db5c73a665", null ],
+    [ "tanTheta", "dc/d5f/classo2_1_1tpc_1_1CalibdEdxTrackTopologyPol.html#af5fc11c7b3ac20e3535d4959b4055f7e", null ],
+    [ "x", "dc/d5f/classo2_1_1tpc_1_1CalibdEdxTrackTopologyPol.html#a04e476f8777f0ae24fa1bea9333bbb99", null ],
+    [ "z", "dc/d5f/classo2_1_1tpc_1_1CalibdEdxTrackTopologyPol.html#aec52d15882021b5b9b2df7d542b916e7", null ]
+];
