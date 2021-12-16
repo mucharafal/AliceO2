@@ -16,6 +16,7 @@
 
 #include "CCDB/CcdbApi.h"
 #include "CCDB/CCDBQuery.h"
+#include "CCDB/CCDBResponse.h"
 #include "CommonUtils/StringUtils.h"
 #include "CommonUtils/MemFileHelper.h"
 #include <chrono>
@@ -83,20 +84,6 @@ void CcdbApi::init(std::string const& host)
   // find out if we can can in principle connect to Alien
   mHaveAlienToken = checkAlienToken();
   LOG(info) << "Is alien token present?: " << mHaveAlienToken;
-}
-
-/**
- * Keep only the alphanumeric characters plus '_' plus '/' from the string passed in argument.
- * @param objectName
- * @return a new string following the rule enounced above.
- */
-std::string sanitizeObjectName(const std::string& objectName)
-{
-  string tmpObjectName = objectName;
-  tmpObjectName.erase(std::remove_if(tmpObjectName.begin(), tmpObjectName.end(),
-                                     [](auto const& c) -> bool { return (!std::isalnum(c) && c != '_' && c != '/'); }),
-                      tmpObjectName.end());
-  return tmpObjectName;
 }
 
 std::unique_ptr<std::vector<char>> CcdbApi::createObjectImage(const void* obj, std::type_info const& tinfo, CcdbObjectInfo* info)
@@ -1155,28 +1142,8 @@ bool CcdbApi::isHostReachable() const
 
 std::vector<std::string> CcdbApi::parseSubFolders(std::string const& reply) const
 {
-  // this needs some text filtering
-  // go through reply line by line until we see "SubFolders:"
-  std::stringstream ss(reply.c_str());
-  std::string line;
-  std::vector<std::string> folders;
-
-  size_t numberoflines = std::count(reply.begin(), reply.end(), '\n');
-  bool inSubFolderSection = false;
-
-  int counter = 0;
-  for (int linenumber = 0; linenumber < numberoflines; ++linenumber) {
-    std::getline(ss, line);
-    if (inSubFolderSection && line.size() > 0) {
-      // remove all white space
-      folders.push_back(sanitizeObjectName(line));
-    }
-
-    if (line.compare("Subfolders:") == 0) {
-      inSubFolderSection = true;
-    }
-  }
-  return folders;
+  CCDBResponse response(reply);
+  return response.getSubFolders();
 }
 
 namespace
@@ -1306,7 +1273,7 @@ namespace
 void traverseAndFillFolders(CcdbApi const& api, std::string const& top, std::vector<std::string>& folders)
 {
   // LOG(info) << "Querying " << top;
-  auto reply = api.list(top);
+  auto reply = api.list(top, true, "application/json");
   folders.emplace_back(top);
   // LOG(info) << reply;
   auto subfolders = api.parseSubFolders(reply);
